@@ -41,6 +41,9 @@
     border-radius: var(--theme-sizes-border-radius);
     padding: var(--theme-sizes-layout-big);
   }
+  .bodyRelative {
+    position: relative;
+  }
 }
 .maxHeight {
   height: 100%;

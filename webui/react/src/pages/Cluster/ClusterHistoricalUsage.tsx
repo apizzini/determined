@@ -2,6 +2,8 @@ import { Button, Col, Row } from 'antd';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 
+import Section from 'components/Section';
+import Spinner from 'components/Spinner';
 import { parseUrl } from 'routes/utils';
 
 import css from './ClusterHistoricalUsage.module.scss';
@@ -27,6 +29,7 @@ const ClusterHistoricalUsage: React.FC = () => {
     groupBy: GroupBy.Day,
   });
   const [ isCsvModalVisible, setIsCsvModalVisible ] = useState<boolean>(false);
+  const [ isLoading, setIsLoading ] = useState<boolean>(true);
   const [ isUrlParsed, setIsUrlParsed ] = useState<boolean>(false);
 
   /*
@@ -123,6 +126,26 @@ const ClusterHistoricalUsage: React.FC = () => {
           </Button>
         </Col>
       </Row>
+
+      <Section bodyBorder bodyRelative title="GPU Hours Allocated">
+        { isLoading ? <Spinner /> : <h1>CHART</h1>}
+      </Section>
+
+      <Section bodyBorder bodyRelative title="GPU Hours by User">
+        { isLoading ? <Spinner /> : <h1>CHART</h1>}
+      </Section>
+
+      <Section bodyBorder bodyRelative title="GPU Hours by Label">
+        { isLoading ? <Spinner /> : <h1>CHART</h1>}
+      </Section>
+
+      <Section bodyBorder bodyRelative title="GPU Hours by Resource Pool">
+        { isLoading ? <Spinner /> : <h1>CHART</h1>}
+      </Section>
+
+      <Section bodyBorder bodyRelative title="GPU Hours by Agent Label">
+        { isLoading ? <Spinner /> : <h1>CHART</h1>}
+      </Section>
 
       {isCsvModalVisible && (
         <ClusterHistoricalUsageCsvModal

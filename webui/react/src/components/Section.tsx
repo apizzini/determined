@@ -7,6 +7,7 @@ import css from './Section.module.scss';
 
 interface Props {
   bodyBorder?: boolean;
+  bodyRelative?: boolean;
   divider?: boolean;
   hideTitle?: boolean;
   id?: string;
@@ -25,6 +26,7 @@ const Section: React.FC<Props> = (props: PropsWithChildren<Props>) => {
   if (props.divider) classes.push(css.divider);
   if (props.maxHeight) classes.push(css.maxHeight);
   if (props.bodyBorder) bodyClasses.push(css.bodyBorder);
+  if (props.bodyRelative) bodyClasses.push(css.bodyRelative);
 
   return (
     <section className={classes.join(' ')} id={id}>
