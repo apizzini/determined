@@ -24,13 +24,13 @@ export interface ClusterHistoricalUsageFiltersInterface {
   groupBy: GroupBy,
 }
 
-export interface ClusterHistoricalUsageFiltersProp {
+interface ClusterHistoricalUsageFiltersProps {
   onChange: (newFilters: ClusterHistoricalUsageFiltersInterface) => void;
   value: ClusterHistoricalUsageFiltersInterface;
 }
 
-const ClusterHistoricalUsageFilters: React.FC<ClusterHistoricalUsageFiltersProp> = (
-  { onChange, value }: ClusterHistoricalUsageFiltersProp,
+const ClusterHistoricalUsageFilters: React.FC<ClusterHistoricalUsageFiltersProps> = (
+  { onChange, value }: ClusterHistoricalUsageFiltersProps,
 ) => {
   const handleGroupBySelect = (groupBy: SelectValue) => {
     if (groupBy === GroupBy.Month) {

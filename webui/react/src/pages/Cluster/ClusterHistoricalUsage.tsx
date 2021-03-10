@@ -7,29 +7,72 @@ import Spinner from 'components/Spinner';
 import { parseUrl } from 'routes/utils';
 
 import css from './ClusterHistoricalUsage.module.scss';
+import ClusterHistoricalUsageChart from './ClusterHistoricalUsageChart';
 import ClusterHistoricalUsageCsvModal from './ClusterHistoricalUsageCsvModal';
 import ClusterHistoricalUsageFilters, {
   ClusterHistoricalUsageFiltersInterface,
 } from './ClusterHistoricalUsageFilters';
+import { generateFakeUsagePeriod } from './tmp';
 
 export const DEFAULT_RANGE_DAY = 14;
 export const DEFAULT_RANGE_MONTH = 6;
 export const MAX_RANGE_DAY = 30;
 export const MAX_RANGE_MONTH = 36;
 
-enum GroupBy {
+export enum GroupBy {
   Day = 'day',
   Month = 'month',
 }
 
+export interface UsagePeriod {
+  hoursByAgentLabel: Record<string, number>,
+  hoursByExperimentLabel: Record<string, number>,
+  hoursByResourcePool: Record<string, number>,
+  hoursByUsername: Record<string, number>,
+  hoursTotal: number,
+  periodStart: string;
+  periodType: GroupBy,
+}
+
+interface ChartSeries {
+  hoursByAgentLabel: Record<string, number>[],
+  hoursByExperimentLabel: Record<string, number>[],
+  hoursByResourcePool: Record<string, number>[],
+  hoursByUsername: Record<string, number>[],
+  hoursTotal: Record<string, number>[],
+  time: string[],
+}
+
+const apiResponseToChartSeries = (apiResponse: UsagePeriod[]): ChartSeries => {
+  const chartSeries: ChartSeries = {
+    hoursByAgentLabel: [],
+    hoursByExperimentLabel: [],
+    hoursByResourcePool: [],
+    hoursByUsername: [],
+    hoursTotal: [],
+    time: [],
+  };
+
+  apiResponse.forEach((period) => {
+    chartSeries.hoursByAgentLabel.push(period.hoursByAgentLabel);
+    chartSeries.hoursByExperimentLabel.push(period.hoursByExperimentLabel);
+    chartSeries.hoursByResourcePool.push(period.hoursByResourcePool);
+    chartSeries.hoursByUsername.push(period.hoursByUsername);
+    chartSeries.hoursTotal.push({ total: period.hoursTotal });
+    chartSeries.time.push(period.periodStart);
+  });
+
+  return chartSeries;
+};
+
 const ClusterHistoricalUsage: React.FC = () => {
+  const [ chartSeries, setChartSeries ] = useState<ChartSeries|null>(null);
   const [ filters, setFilters ] = useState<ClusterHistoricalUsageFiltersInterface>({
     afterDate: dayjs().subtract(1 + DEFAULT_RANGE_DAY, 'day'),
     beforeDate: dayjs().subtract(1, 'day'),
     groupBy: GroupBy.Day,
   });
   const [ isCsvModalVisible, setIsCsvModalVisible ] = useState<boolean>(false);
-  const [ isLoading, setIsLoading ] = useState<boolean>(true);
   const [ isUrlParsed, setIsUrlParsed ] = useState<boolean>(false);
 
   /*
@@ -97,7 +140,9 @@ const ClusterHistoricalUsage: React.FC = () => {
     setIsUrlParsed(true);
   }, [ filters, isUrlParsed ]);
 
-  // when grouped by month force csv modal to display start/end of month
+  /*
+   * When grouped by month force csv modal to display start/end of month
+   */
   let csvAfterDate = filters.afterDate;
   let csvBeforeDate = filters.beforeDate;
   if (filters.groupBy === GroupBy.Month) {
@@ -108,8 +153,25 @@ const ClusterHistoricalUsage: React.FC = () => {
     }
   }
 
-  // todo: chart
-  // todo: chart have max 5 labels, then group in "others"
+  /*
+   * Load chart data
+   */
+  useEffect(() => {
+    if (!isUrlParsed) return;
+    setChartSeries(null);
+
+    const timeout = setTimeout(() => {
+      const apiResponse = generateFakeUsagePeriod(
+        filters.groupBy,
+        filters.afterDate,
+        filters.beforeDate,
+      );
+      const chartSeries = apiResponseToChartSeries(apiResponse);
+      setChartSeries(chartSeries);
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [ filters.afterDate, filters.beforeDate, filters.groupBy, isUrlParsed ]);
 
   return (
     <>
@@ -128,23 +190,53 @@ const ClusterHistoricalUsage: React.FC = () => {
       </Row>
 
       <Section bodyBorder bodyRelative title="GPU Hours Allocated">
-        { isLoading ? <Spinner /> : <h1>CHART</h1>}
+        { chartSeries == null ? <Spinner /> : (
+          <ClusterHistoricalUsageChart
+            data={chartSeries.hoursTotal}
+            time={chartSeries.time}
+            timeGroupBy={filters.groupBy}
+          />
+        ) }
       </Section>
 
       <Section bodyBorder bodyRelative title="GPU Hours by User">
-        { isLoading ? <Spinner /> : <h1>CHART</h1>}
+        { chartSeries == null ? <Spinner /> : (
+          <ClusterHistoricalUsageChart
+            data={chartSeries.hoursByUsername}
+            time={chartSeries.time}
+            timeGroupBy={filters.groupBy}
+          />
+        ) }
       </Section>
 
       <Section bodyBorder bodyRelative title="GPU Hours by Label">
-        { isLoading ? <Spinner /> : <h1>CHART</h1>}
+        { chartSeries == null ? <Spinner /> : (
+          <ClusterHistoricalUsageChart
+            data={chartSeries.hoursByExperimentLabel}
+            time={chartSeries.time}
+            timeGroupBy={filters.groupBy}
+          />
+        ) }
       </Section>
 
       <Section bodyBorder bodyRelative title="GPU Hours by Resource Pool">
-        { isLoading ? <Spinner /> : <h1>CHART</h1>}
+        { chartSeries == null ? <Spinner /> : (
+          <ClusterHistoricalUsageChart
+            data={chartSeries.hoursByResourcePool}
+            time={chartSeries.time}
+            timeGroupBy={filters.groupBy}
+          />
+        ) }
       </Section>
 
       <Section bodyBorder bodyRelative title="GPU Hours by Agent Label">
-        { isLoading ? <Spinner /> : <h1>CHART</h1>}
+        { chartSeries == null ? <Spinner /> : (
+          <ClusterHistoricalUsageChart
+            data={chartSeries.hoursByAgentLabel}
+            time={chartSeries.time}
+            timeGroupBy={filters.groupBy}
+          />
+        ) }
       </Section>
 
       {isCsvModalVisible && (
