@@ -6,5 +6,7 @@
 
   :global(.ant-col:not(:last-child)) {
     border-right: 1px solid var(--theme-colors-monochrome-12);
+    margin-right: var(--theme-sizes-layout-big);
+    padding-right: var(--theme-sizes-layout-big);
   }
 }

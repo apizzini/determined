@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import Section from 'components/Section';
 import Spinner from 'components/Spinner';
 import { parseUrl } from 'routes/utils';
+import { sumArrays } from 'utils/array';
 
 import css from './ClusterHistoricalUsage.module.scss';
 import ClusterHistoricalUsageChart from './ClusterHistoricalUsageChart';
@@ -64,7 +65,30 @@ const mapToChartSeries = (labelByPeriod: Record<string, number>[]): Record<strin
     }
   });
 
-  return periodByLabelIndexedFlat;
+  // 3. find top 5 labels
+  const topLabels = Object.keys(periodByLabelIndexedFlat).map(label => {
+    const hours = periodByLabelIndexedFlat[label].reduce((acc, val) => acc + val, 0);
+    return [ label, hours ];
+  })
+    .sort((a, b) => ((b[1] as number) - (a[1] as number)))
+    .slice(0, 5)
+    .map(item => item[0]);
+
+  // 4. sum non-top labels hours into "other labels"
+  let ret = {};
+  let otherLabels: number[] = [];
+  Object.keys(periodByLabelIndexedFlat).forEach(label => {
+    if (topLabels.includes(label)) {
+      ret = { ...ret, [label]: periodByLabelIndexedFlat[label] };
+    } else {
+      otherLabels = sumArrays(otherLabels, periodByLabelIndexedFlat[label]);
+    }
+  });
+  if (otherLabels.length > 0) {
+    ret = { ...ret, ['other labels']: otherLabels };
+  }
+
+  return ret;
 };
 
 const ClusterHistoricalUsage: React.FC = () => {
@@ -184,7 +208,7 @@ const ClusterHistoricalUsage: React.FC = () => {
 
   return (
     <>
-      <Row className={css.filter} gutter={32} justify="end">
+      <Row className={css.filter} justify="end">
         <Col>
           <ClusterHistoricalUsageFilters
             value={filters}

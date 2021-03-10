@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import uPlot, { Options } from 'uplot';
 
 import useResize from 'hooks/useResize';
+import { glasbeyColor } from 'utils/color';
 
 import css from './ClusterHistoricalUsageChart.module.scss';
 
@@ -44,9 +45,9 @@ const ClusterHistoricalUsageChart: React.FC<ClusterHistoricalUsageChartProps> = 
       height,
       series: [
         { value: '{YYYY}-{MM}-{DD}' },
-        ...Object.keys(data).map(label => ({
+        ...Object.keys(data).map((label, index) => ({
           label: label,
-          stroke: '#1f77b4',
+          stroke: glasbeyColor(index),
           width: 2,
         })),
       ],
