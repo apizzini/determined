@@ -43,48 +43,28 @@ interface ChartSeries {
   time: string[],
 }
 
-const flatChartSeriesLabels = (
-  labels: Record<string, Record<number, number>>,
-  timePoint: number,
-): Record<string, number[]> => {
-  const ret: Record<string, number[]> = {};
-  Object.keys(labels).forEach(label => {
-    ret[label] = [];
-    for (let i = 0; i < timePoint; i++) {
-      ret[label].push(labels[label][i] || 0);
-    }
-  });
-  return ret;
-};
-
-const apiResponseToChartSeries = (apiResponse: UsagePeriod[]): ChartSeries => {
-  const hoursByAgentLabel: Record<string, Record<number, number>> = {};
-  const time: string[] = [];
-
-  apiResponse.forEach((period) => {
-    time.push(period.periodStart);
-    const timeIndex = (time.length - 1);
-
-    Object.keys(period.hoursByAgentLabel).forEach(label => {
-      hoursByAgentLabel[label] = {
-        ...(hoursByAgentLabel[label] || {}),
-        [timeIndex]: period.hoursByAgentLabel[label],
+const mapToChartSeries = (labelByPeriod: Record<string, number>[]): Record<string, number[]> => {
+  // 1. convert [periodIndex: {label: hours}, ...] to {label: {periodIndex: hours}, ...}
+  const periodByLabelIndexed: Record<string, Record<number, number>> = {};
+  labelByPeriod.forEach((period, periodIndex) => {
+    Object.keys(period).forEach(label => {
+      periodByLabelIndexed[label] = {
+        ...(periodByLabelIndexed[label] || {}),
+        [periodIndex]: period[label],
       };
     });
-    // chartSeries.hoursByExperimentLabel.push(period.hoursByExperimentLabel);
-    // chartSeries.hoursByResourcePool.push(period.hoursByResourcePool);
-    // chartSeries.hoursByUsername.push(period.hoursByUsername);
-    // chartSeries.hoursTotal.push({ total: period.hoursTotal });
   });
 
-  return {
-    hoursByAgentLabel: flatChartSeriesLabels(hoursByAgentLabel, time.length),
-    hoursByExperimentLabel: {},
-    hoursByResourcePool: {},
-    hoursByUsername: {},
-    hoursTotal: {},
-    time: time,
-  };
+  // 2. convert {label: {periodIndex: hours}, ...} to {label: [hours, ...], ...}
+  const periodByLabelIndexedFlat: Record<string, number[]> = {};
+  Object.keys(periodByLabelIndexed).forEach(label => {
+    periodByLabelIndexedFlat[label] = [];
+    for (let i = 0; i < labelByPeriod.length; i++) {
+      periodByLabelIndexedFlat[label].push(periodByLabelIndexed[label][i] || 0);
+    }
+  });
+
+  return periodByLabelIndexedFlat;
 };
 
 const ClusterHistoricalUsage: React.FC = () => {
@@ -183,12 +163,19 @@ const ClusterHistoricalUsage: React.FC = () => {
     setChartSeries(null);
 
     const timeout = setTimeout(() => {
-      const apiResponse = generateFakeUsagePeriod(
+      const apiRes = generateFakeUsagePeriod(
         filters.groupBy,
         filters.afterDate,
         filters.beforeDate,
       );
-      const chartSeries = apiResponseToChartSeries(apiResponse);
+      const chartSeries = {
+        hoursByAgentLabel: mapToChartSeries(apiRes.map(item => item.hoursByAgentLabel)),
+        hoursByExperimentLabel: mapToChartSeries(apiRes.map(item => item.hoursByExperimentLabel)),
+        hoursByResourcePool: mapToChartSeries(apiRes.map(item => item.hoursByResourcePool)),
+        hoursByUsername: mapToChartSeries(apiRes.map(item => item.hoursByUsername)),
+        hoursTotal: { total: apiRes.map(item => item.hoursTotal) },
+        time: apiRes.map(item => item.periodStart),
+      };
       setChartSeries(chartSeries);
     }, 1000);
 

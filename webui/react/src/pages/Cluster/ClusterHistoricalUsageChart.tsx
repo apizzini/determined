@@ -31,11 +31,11 @@ const ClusterHistoricalUsageChart: React.FC<ClusterHistoricalUsageChartProps> = 
         {
           values: (self, splits) => {
             return splits.map(i => {
-              var date = new Date(i * 1000);
-              var M = date.getMonth() + 1;
-              var MM = (M < 10 ? '0' : '') + M;
-              var D = date.getDate();
-              var DD = (D < 10 ? '0' : '') + D;
+              const date = new Date(i * 1000);
+              const M = date.getMonth() + 1;
+              const MM = (M < 10 ? '0' : '') + M;
+              const D = date.getDate();
+              const DD = (D < 10 ? '0' : '') + D;
               return MM + '-' + DD;
             });
           },
@@ -44,17 +44,16 @@ const ClusterHistoricalUsageChart: React.FC<ClusterHistoricalUsageChartProps> = 
       height,
       series: [
         { value: '{YYYY}-{MM}-{DD}' },
-        {
-          label: 'Label 1',
+        ...Object.keys(data).map(label => ({
+          label: label,
           stroke: '#1f77b4',
           width: 2,
-        },
+        })),
       ],
       width: chartRef.current.offsetWidth,
     } as Options;
-    // console.log('options', options);
 
-    const plotChart = new uPlot(options, [ timeUnix, [ 1, 2, 3, 4, 5, 6, 7 ] ], chartRef.current);
+    const plotChart = new uPlot(options, [ timeUnix, ...Object.values(data) ], chartRef.current);
     setChart(plotChart);
 
     return () => {
