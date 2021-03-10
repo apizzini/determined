@@ -35,34 +35,56 @@ export interface UsagePeriod {
 }
 
 interface ChartSeries {
-  hoursByAgentLabel: Record<string, number>[],
-  hoursByExperimentLabel: Record<string, number>[],
-  hoursByResourcePool: Record<string, number>[],
-  hoursByUsername: Record<string, number>[],
-  hoursTotal: Record<string, number>[],
+  hoursByAgentLabel: Record<string, number[]>,
+  hoursByExperimentLabel: Record<string, number[]>,
+  hoursByResourcePool: Record<string, number[]>,
+  hoursByUsername: Record<string, number[]>,
+  hoursTotal: Record<string, number[]>,
   time: string[],
 }
 
+const flatChartSeriesLabels = (
+  labels: Record<string, Record<number, number>>,
+  timePoint: number,
+): Record<string, number[]> => {
+  const ret: Record<string, number[]> = {};
+  Object.keys(labels).forEach(label => {
+    ret[label] = [];
+    for (let i = 0; i < timePoint; i++) {
+      ret[label].push(labels[label][i] || 0);
+    }
+  });
+  return ret;
+};
+
 const apiResponseToChartSeries = (apiResponse: UsagePeriod[]): ChartSeries => {
-  const chartSeries: ChartSeries = {
-    hoursByAgentLabel: [],
-    hoursByExperimentLabel: [],
-    hoursByResourcePool: [],
-    hoursByUsername: [],
-    hoursTotal: [],
-    time: [],
-  };
+  const hoursByAgentLabel: Record<string, Record<number, number>> = {};
+  const time: string[] = [];
 
   apiResponse.forEach((period) => {
-    chartSeries.hoursByAgentLabel.push(period.hoursByAgentLabel);
-    chartSeries.hoursByExperimentLabel.push(period.hoursByExperimentLabel);
-    chartSeries.hoursByResourcePool.push(period.hoursByResourcePool);
-    chartSeries.hoursByUsername.push(period.hoursByUsername);
-    chartSeries.hoursTotal.push({ total: period.hoursTotal });
-    chartSeries.time.push(period.periodStart);
+    time.push(period.periodStart);
+    const timeIndex = (time.length - 1);
+
+    Object.keys(period.hoursByAgentLabel).forEach(label => {
+      hoursByAgentLabel[label] = {
+        ...(hoursByAgentLabel[label] || {}),
+        [timeIndex]: period.hoursByAgentLabel[label],
+      };
+    });
+    // chartSeries.hoursByExperimentLabel.push(period.hoursByExperimentLabel);
+    // chartSeries.hoursByResourcePool.push(period.hoursByResourcePool);
+    // chartSeries.hoursByUsername.push(period.hoursByUsername);
+    // chartSeries.hoursTotal.push({ total: period.hoursTotal });
   });
 
-  return chartSeries;
+  return {
+    hoursByAgentLabel: flatChartSeriesLabels(hoursByAgentLabel, time.length),
+    hoursByExperimentLabel: {},
+    hoursByResourcePool: {},
+    hoursByUsername: {},
+    hoursTotal: {},
+    time: time,
+  };
 };
 
 const ClusterHistoricalUsage: React.FC = () => {
@@ -194,7 +216,6 @@ const ClusterHistoricalUsage: React.FC = () => {
           <ClusterHistoricalUsageChart
             data={chartSeries.hoursTotal}
             time={chartSeries.time}
-            timeGroupBy={filters.groupBy}
           />
         ) }
       </Section>
@@ -204,7 +225,6 @@ const ClusterHistoricalUsage: React.FC = () => {
           <ClusterHistoricalUsageChart
             data={chartSeries.hoursByUsername}
             time={chartSeries.time}
-            timeGroupBy={filters.groupBy}
           />
         ) }
       </Section>
@@ -214,7 +234,6 @@ const ClusterHistoricalUsage: React.FC = () => {
           <ClusterHistoricalUsageChart
             data={chartSeries.hoursByExperimentLabel}
             time={chartSeries.time}
-            timeGroupBy={filters.groupBy}
           />
         ) }
       </Section>
@@ -224,7 +243,6 @@ const ClusterHistoricalUsage: React.FC = () => {
           <ClusterHistoricalUsageChart
             data={chartSeries.hoursByResourcePool}
             time={chartSeries.time}
-            timeGroupBy={filters.groupBy}
           />
         ) }
       </Section>
@@ -234,7 +252,6 @@ const ClusterHistoricalUsage: React.FC = () => {
           <ClusterHistoricalUsageChart
             data={chartSeries.hoursByAgentLabel}
             time={chartSeries.time}
-            timeGroupBy={filters.groupBy}
           />
         ) }
       </Section>

@@ -42,7 +42,7 @@ export const generateFakeUsagePeriod = (
       hoursByUsername: generateFakeLabelHours(hoursTotal),
       hoursTotal,
       periodStart: currentDate.format(dateFormat),
-      periodType: GroupBy.Day,
+      periodType: groupBy,
     });
   }
 
